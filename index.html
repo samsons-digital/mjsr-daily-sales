@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MJSR Daily Sales Reconciliation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#1B2C4D; --gold:#B8922E; --ink:#16202F; --mute:#5C6B82;
+  --line:#DDE3EC; --wash:#F4F6F9; --white:#FFFFFF;
+  --green:#1E7B4D; --red:#B3261E; --amber:#B8922E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--wash);color:var(--ink);font-size:14px;line-height:1.45}
+header{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{font-size:19px;font-weight:bold;letter-spacing:.3px}
+header .sub{font-size:12px;color:#B9C4D6;margin-top:3px}
+.badge{background:var(--gold);color:#1B2C4D;font-weight:bold;font-size:11px;padding:5px 11px;border-radius:2px;letter-spacing:.5px}
+nav{background:#132239;display:flex;overflow-x:auto}
+nav button{background:none;border:none;color:#9FB0C8;font-family:inherit;font-size:13px;font-weight:bold;padding:13px 20px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+nav button:hover{color:#fff}
+nav button.on{color:#fff;border-bottom-color:var(--gold)}
+main{padding:22px;max-width:1400px;margin:0 auto}
+.panel{display:none}.panel.on{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:3px;margin-bottom:18px}
+.card h2{font-size:14px;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--navy);color:#fff;letter-spacing:.3px}
+.card .body{padding:16px}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:3px;padding:14px 16px}
+.kpi .lbl{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px;font-weight:bold}
+.kpi .val{font-size:24px;font-weight:bold;color:var(--navy);margin-top:5px}
+.kpi .sec{font-size:12px;color:var(--mute);margin-top:3px}
+.kpi.g{border-left-color:var(--green)} .kpi.n{border-left-color:var(--navy)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--navy);color:#fff;text-align:left;padding:9px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0}
+td{padding:8px 10px;border-bottom:1px solid var(--line)}
+tbody tr:nth-child(even){background:#FAFBFD}
+tbody tr:hover{background:#EEF3FA}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.tot td{font-weight:bold;background:#E9EEF6 !important;border-top:2px solid var(--navy)}
+.scroll{max-height:520px;overflow:auto}
+button.act{background:var(--navy);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:bold;padding:11px 22px;border-radius:2px;cursor:pointer}
+button.act:hover{background:#25395F}
+button.act:disabled{background:#9AA6B8;cursor:not-allowed}
+button.gold{background:var(--gold);color:#1B2C4D}
+button.gold:hover{background:#CFA637}
+button.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy)}
+input,select{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:2px;background:#fff}
+input.num{text-align:right}
+#drop{border:2px dashed #A9B7CC;border-radius:4px;padding:38px 20px;text-align:center;background:#FBFCFE;cursor:pointer}
+#drop.hot{border-color:var(--gold);background:#FFFCF2}
+#drop .big{font-size:15px;font-weight:bold;color:var(--navy)}
+#drop .small{font-size:12px;color:var(--mute);margin-top:6px}
+.thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.thumb{position:relative;width:104px;height:104px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:#fff}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb span{position:absolute;top:3px;right:3px;background:var(--red);color:#fff;width:20px;height:20px;border-radius:50%;font-size:13px;line-height:20px;text-align:center;cursor:pointer;font-weight:bold}
+.flag{border-left:4px solid;padding:10px 14px;margin-bottom:8px;font-size:13px;border-radius:2px}
+.flag.HIGH{border-color:var(--red);background:#FDF1F0}
+.flag.MEDIUM{border-color:var(--amber);background:#FFFBF0}
+.flag.LOW{border-color:#5C6B82;background:#F4F6F9}
+.flag b{display:inline-block;min-width:66px}
+.clean{border-left:4px solid var(--green);background:#F1F9F4;padding:10px 14px;font-size:13px;border-radius:2px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chartbox{position:relative;height:290px}
+.muted{color:var(--mute);font-size:12px}
+.pill{display:inline-block;font-size:11px;font-weight:bold;padding:3px 9px;border-radius:2px;background:#E9EEF6;color:var(--navy)}
+.empty{padding:44px 20px;text-align:center;color:var(--mute)}
+.empty b{display:block;color:var(--navy);font-size:15px;margin-bottom:6px}
+@media(max-width:640px){main{padding:14px}.card .body{padding:12px}header h1{font-size:16px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MJSR Daily Sales Reconciliation</h1>
+    <div class="sub">Malam Jabba Ski Resort and Green Valley Adventure Park &middot; Samsons Group</div>
+  </div>
+  <div class="row">
+    <span class="badge" id="lastSync">Loading</span>
+    <button class="act ghost" onclick="loadAll(true)">Refresh</button>
+  </div>
+</header>
+
+<nav>
+  <button class="on" data-p="upload">Upload report</button>
+  <button data-p="overview">Overview</button>
+  <button data-p="activities">Activities</button>
+  <button data-p="fb">Food and beverage</button>
+  <button data-p="gv">Green Valley</button>
+  <button data-p="history">History</button>
+</nav>
+
+<main>
+
+<!-- UPLOAD -->
+<section class="panel on" id="p-upload">
+  <div class="card">
+    <h2>Upload the daily reconciliation</h2>
+    <div class="body">
+      <div id="drop">
+        <div class="big">Drop the sale report images here, or tap to choose</div>
+        <div class="small">Add both sheets together, the summary card and the full MJ Sale Report. JPG or PNG.</div>
+      </div>
+      <input type="file" id="picker" accept="image/*" multiple style="display:none">
+      <div class="thumbs" id="thumbs"></div>
+      <div class="row" style="margin-top:16px">
+        <button class="act gold" id="btnExtract" onclick="extract()" disabled>Read the figures</button>
+        <span class="muted" id="upStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="reviewWrap" style="display:none">
+    <div class="card">
+      <h2>Checks before saving</h2>
+      <div class="body" id="flagBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>Headline figures, edit anything the reader got wrong</h2>
+      <div class="body">
+        <div class="row" style="margin-bottom:14px">
+          <label style="font-weight:bold">Report date</label>
+          <input type="date" id="rDate">
+        </div>
+        <div class="grid g2">
+          <div>
+            <div class="pill" style="margin-bottom:8px">RESORT</div>
+            <table id="tResort"></table>
+          </div>
+          <div>
+            <div class="pill" style="margin-bottom:8px">GREEN VALLEY</div>
+            <table id="tGv"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Line items read from the report</h2>
+      <div class="body">
+        <div class="scroll"><table id="tLines"></table></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Save to the database</h2>
+      <div class="body">
+        <div class="row">
+          <label style="font-weight:bold">Manager PIN</label>
+          <input type="password" id="pin" style="width:110px" maxlength="8" placeholder="****">
+          <button class="act" id="btnCommit" onclick="commit()">Save to database</button>
+          <span class="muted" id="cmStatus"></span>
+        </div>
+        <div class="muted" style="margin-top:10px">Saving replaces any existing record for the same date, so a corrected sheet can be re-uploaded safely.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section class="panel" id="p-overview">
+  <div class="card"><div class="body row">
+    <label style="font-weight:bold">Showing</label>
+    <select id="ovDate" onchange="renderOverview()"></select>
+    <span class="muted" id="ovNote"></span>
+  </div></div>
+  <div class="grid g4" id="ovKpi" style="margin-bottom:18px"></div>
+  <div class="grid g2">
+    <div class="card"><h2>Revenue and footfall, last 30 records</h2><div class="body"><div class="chartbox"><canvas id="cTrend"></canvas></div></div></div>
+    <div class="card"><h2>Revenue by category, selected day</h2><div class="body"><div class="chartbox"><canvas id="cCat"></canvas></div></div></div>
+    <div class="card"><h2>Customers by category, selected day</h2><div class="body"><div class="chartbox"><canvas id="cCust"></canvas></div></div></div>
+    <div class="card"><h2>Resort against Green Valley, month to date</h2><div class="body"><div class="chartbox"><canvas id="cSplit"></canvas></div></div></div>
+  </div>
+</section>
+
+<!-- ACTIVITIES -->
+<section class="panel" id="p-activities">
+  <div class="card"><div class="body row">
+    <label style="font-weight:bold">Date</label>
+    <select id="acDate" onchange="renderActivities()"></select>
+    <label style="font-weight:bold">Entity</label>
+    <select id="acEnt" onchange="renderActivities()">
+      <option>All</option><option>Resort</option><option>Green Valley</option>
+    </select>
+    <button class="act ghost" onclick="exportCsv('activities')">Export CSV</button>
+  </div></div>
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card"><h2>Top lines by revenue</h2><div class="body"><div class="chartbox"><canvas id="cTop"></canvas></div></div></div>
+    <div class="card"><h2>Top lines by customers</h2><div class="body"><div class="chartbox"><canvas id="cTopC"></canvas></div></div></div>
+  </div>
+  <div class="card"><h2>Every line item</h2><div class="body"><div class="scroll"><table id="tAct"></table></div></div></div>
+</section>
+
+<!-- F&B -->
+<section class="panel" id="p-fb">
+  <div class="card"><div class="body row">
+    <label style="font-weight:bold">Date</label>
+    <select id="fbDate" onchange="renderFb()"></select>
+  </div></div>
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card"><h2>Outlet revenue, selected day</h2><div class="body"><div class="chartbox"><canvas id="cFb"></canvas></div></div></div>
+    <div class="card"><h2>Outlet revenue, month to date</h2><div class="body"><div class="chartbox"><canvas id="cFbM"></canvas></div></div></div>
+  </div>
+  <div class="card"><h2>Outlets and KPRA</h2><div class="body"><table id="tFb"></table></div></div>
+  <div class="card"><h2>Food voucher deductions</h2><div class="body"><table id="tDed"></table></div></div>
+</section>
+
+<!-- GREEN VALLEY -->
+<section class="panel" id="p-gv">
+  <div class="card"><div class="body row">
+    <label style="font-weight:bold">Date</label>
+    <select id="gvDate" onchange="renderGv()"></select>
+  </div></div>
+  <div class="grid g4" id="gvKpi" style="margin-bottom:18px"></div>
+  <div class="grid g2">
+    <div class="card"><h2>Green Valley revenue trend</h2><div class="body"><div class="chartbox"><canvas id="cGvT"></canvas></div></div></div>
+    <div class="card"><h2>Green Valley activity mix, selected day</h2><div class="body"><div class="chartbox"><canvas id="cGvM"></canvas></div></div></div>
+  </div>
+  <div class="card"><h2>Green Valley line items</h2><div class="body"><table id="tGvLines"></table></div></div>
+</section>
+
+<!-- HISTORY -->
+<section class="panel" id="p-history">
+  <div class="card"><div class="body row">
+    <button class="act ghost" onclick="exportCsv('history')">Export CSV</button>
+    <span class="muted" id="histNote"></span>
+  </div></div>
+  <div class="card"><h2>Every day recorded</h2><div class="body"><div class="scroll"><table id="tHist"></table></div></div></div>
+</section>
+
+</main>
+
+<script>
+var API='https://script.google.com/macros/s/AKfycbwyXOISC870jhSuP7xBlIu6iUiw9KleAcFYabXLPgbtgY-omSyWkt2TxbEG-zYELxeCUw/exec';
+var PIN='1234';
+var NAVY='#1B2C4D', GOLD='#B8922E', GREEN='#1E7B4D', RED='#B3261E';
+var PALETTE=['#1B2C4D','#B8922E','#1E7B4D','#4A6491','#8A6D1F','#3F8F6B','#7286A8','#C4A94F','#5C6B82','#9BAAC4','#D6BE79','#2F5A78'];
+
+var DB={summary:[],activities:[],fb:[],deductions:[],config:[]};
+var IMAGES=[];
+var EXTRACTED=null;
+var CHARTS={};
+
+/* ---------- utilities ---------- */
+function $(id){return document.getElementById(id);}
+function n(v){var x=parseFloat(String(v===null||v===undefined?0:v).replace(/[^0-9.\-]/g,''));return isNaN(x)?0:x;}
+function f(v){return n(v).toLocaleString('en-US',{maximumFractionDigits:0});}
+function f2(v){return n(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){return String(s===null||s===undefined?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function post(body){
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
+    .then(function(r){return r.json();});
+}
+function killChart(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+
+/* ---------- navigation ---------- */
+Array.prototype.forEach.call(document.querySelectorAll('nav button'),function(b){
+  b.onclick=function(){
+    Array.prototype.forEach.call(document.querySelectorAll('nav button'),function(x){x.classList.remove('on');});
+    Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    $('p-'+b.dataset.p).classList.add('on');
+    if(b.dataset.p==='overview')renderOverview();
+    if(b.dataset.p==='activities')renderActivities();
+    if(b.dataset.p==='fb')renderFb();
+    if(b.dataset.p==='gv')renderGv();
+  };
+});
+
+/* ---------- image intake ---------- */
+var drop=$('drop'), picker=$('picker');
+drop.onclick=function(){picker.click();};
+drop.ondragover=function(e){e.preventDefault();drop.classList.add('hot');};
+drop.ondragleave=function(){drop.classList.remove('hot');};
+drop.ondrop=function(e){e.preventDefault();drop.classList.remove('hot');handleFiles(e.dataTransfer.files);};
+picker.onchange=function(){handleFiles(picker.files);};
+
+function handleFiles(list){
+  var files=Array.prototype.slice.call(list).filter(function(x){return x.type.indexOf('image')===0;});
+  if(!files.length)return;
+  $('upStatus').textContent='Preparing '+files.length+' image(s)';
+  var done=0;
+  files.forEach(function(file){
+    shrink(file,function(obj){
+      IMAGES.push(obj); done++;
+      if(done===files.length){$('upStatus').textContent='';}
+      paintThumbs();
+    });
+  });
+}
+
+function shrink(file,cb){
+  var reader=new FileReader();
+  reader.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=1600, w=img.width, h=img.height;
+      if(w>max||h>max){var s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s);}
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      var ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+      var url=c.toDataURL('image/jpeg',0.9);
+      cb({name:file.name,media_type:'image/jpeg',data:url.split(',')[1],preview:url});
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function paintThumbs(){
+  $('thumbs').innerHTML=IMAGES.map(function(im,i){
+    return '<div class="thumb"><img src="'+im.preview+'" alt=""><span onclick="dropImage('+i+')">&times;</span></div>';
+  }).join('');
+  $('btnExtract').disabled=IMAGES.length===0;
+}
+function dropImage(i){IMAGES.splice(i,1);paintThumbs();}
+
+/* ---------- extraction ---------- */
+function extract(){
+  if(!IMAGES.length)return;
+  var b=$('btnExtract');
+  b.disabled=true; b.innerHTML='<span class="spin"></span>Reading';
+  $('upStatus').textContent='This takes around 20 to 40 seconds';
+  post({action:'EXTRACT',images:IMAGES.map(function(i){return {media_type:i.media_type,data:i.data};})})
+  .then(function(r){
+    b.disabled=false; b.textContent='Read the figures'; $('upStatus').textContent='';
+    if(!r.ok){alert('The reader could not finish. '+(r.error||'Unknown error'));return;}
+    EXTRACTED=r.data;
+    paintReview(r.data,r.checks||[]);
+    $('reviewWrap').style.display='block';
+    $('reviewWrap').scrollIntoView({behavior:'smooth'});
+  })
+  .catch(function(e){
+    b.disabled=false; b.textContent='Read the figures'; $('upStatus').textContent='';
+    alert('Could not reach the backend. '+e);
+  });
+}
+
+function paintReview(d,checks){
+  $('flagBox').innerHTML = checks.length
+    ? checks.map(function(c){return '<div class="flag '+c.severity+'"><b>'+c.severity+'</b>'+esc(c.message)+'</div>';}).join('')
+    : '<div class="clean">Every reconciliation check passed. The figures agree across both sheets.</div>';
+
+  $('rDate').value=d.report_date||'';
+
+  var rows=[['customers','Customers'],['gross','Gross revenue'],['kpra','KPRA'],['net','Net revenue'],['arpc','ARPC'],
+            ['customers_mtd','Customers MTD'],['gross_mtd','Gross MTD'],['net_mtd','Net MTD'],['arpc_mtd','ARPC MTD']];
+
+  function block(tid,obj,key){
+    var o=obj||{};
+    $(tid).innerHTML='<tbody>'+rows.map(function(r){
+      return '<tr><td>'+r[1]+'</td><td class="num"><input class="num" style="width:130px" data-k="'+key+'.'+r[0]+'" value="'+n(o[r[0]])+'"></td></tr>';
+    }).join('')+'</tbody>';
+  }
+  block('tResort',d.resort,'resort');
+  block('tGv',d.green_valley,'green_valley');
+
+  var lines=(d.activity_lines||[]).concat([]);
+  $('tLines').innerHTML='<thead><tr><th>Entity</th><th>Line item</th><th class="num">Price</th><th class="num">Cust.</th><th class="num">Gross day</th><th class="num">Net day</th><th class="num">Gross MTD</th></tr></thead><tbody>'+
+    lines.map(function(l,i){
+      return '<tr><td>'+esc(l.entity)+'</td><td>'+esc(l.line_item)+'</td>'+
+        '<td class="num">'+f(l.ticket_price)+'</td>'+
+        '<td class="num"><input class="num" style="width:70px" data-l="'+i+'.customers" value="'+n(l.customers)+'"></td>'+
+        '<td class="num"><input class="num" style="width:105px" data-l="'+i+'.gross_day" value="'+n(l.gross_day)+'"></td>'+
+        '<td class="num">'+f(l.net_day)+'</td><td class="num">'+f(l.gross_mtd)+'</td></tr>';
+    }).join('')+
+    (d.fb_lines||[]).map(function(l){
+      return '<tr style="background:#F7F4EA"><td>'+esc(l.entity)+'</td><td>F&amp;B &middot; '+esc(l.outlet)+'</td><td class="num">-</td><td class="num">-</td>'+
+        '<td class="num">'+f2(l.gross_day)+'</td><td class="num">'+f2(l.net_day)+'</td><td class="num">'+f2(l.gross_mtd)+'</td></tr>';
+    }).join('')+'</tbody>';
+}
+
+function harvestEdits(){
+  var d=EXTRACTED;
+  d.report_date=$('rDate').value||d.report_date;
+  Array.prototype.forEach.call(document.querySelectorAll('#tResort input,#tGv input'),function(inp){
+    var p=inp.dataset.k.split('.');
+    if(!d[p[0]])d[p[0]]={};
+    d[p[0]][p[1]]=n(inp.value);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#tLines input'),function(inp){
+    var p=inp.dataset.l.split('.');
+    d.activity_lines[parseInt(p[0],10)][p[1]]=n(inp.value);
+  });
+  return d;
+}
+
+function commit(){
+  if($('pin').value!==PIN){alert('That PIN is not right.');return;}
+  if(!EXTRACTED){return;}
+  var d=harvestEdits();
+  if(!d.report_date){alert('Set the report date before saving.');return;}
+  var b=$('btnCommit');
+  b.disabled=true;b.innerHTML='<span class="spin"></span>Saving';
+  post({action:'COMMIT',data:d,user:'GM Portal',image_name:IMAGES.map(function(i){return i.name;}).join(', ')})
+  .then(function(r){
+    b.disabled=false;b.textContent='Save to database';
+    if(!r.ok){alert('Not saved. '+(r.error||''));return;}
+    $('cmStatus').textContent='Saved '+r.written+' rows for '+r.date;
+    IMAGES=[];paintThumbs();EXTRACTED=null;
+    $('reviewWrap').style.display='none';$('pin').value='';
+    loadAll(true);
+  })
+  .catch(function(e){b.disabled=false;b.textContent='Save to database';alert('Could not reach the backend. '+e);});
+}
+
+/* ---------- data load ---------- */
+function loadAll(quiet){
+  $('lastSync').textContent='Syncing';
+  post({action:'DASHBOARD'}).then(function(r){
+    if(!r.ok){$('lastSync').textContent='Sync failed';return;}
+    DB.summary=r.summary||[];DB.activities=r.activities||[];DB.fb=r.fb||[];
+    DB.deductions=r.deductions||[];DB.config=r.config||[];
+    $('lastSync').textContent=DB.summary.length?('Records to '+latestDate()):'No records yet';
+    fillDates();
+    renderOverview();renderHistory();
+  }).catch(function(){$('lastSync').textContent='Offline';});
+}
+
+function dates(){
+  var s={};DB.summary.forEach(function(r){if(r.Date)s[r.Date]=1;});
+  return Object.keys(s).sort().reverse();
+}
+function latestDate(){var d=dates();return d.length?d[0]:'';}
+function fillDates(){
+  var d=dates();
+  ['ovDate','acDate','fbDate','gvDate'].forEach(function(id){
+    var el=$(id),cur=el.value;
+    el.innerHTML=d.map(function(x){return '<option>'+x+'</option>';}).join('');
+    if(cur&&d.indexOf(cur)>=0)el.value=cur;
+  });
+}
+function sumRow(date,entity){
+  for(var i=0;i<DB.summary.length;i++){
+    if(DB.summary[i].Date===date&&DB.summary[i].Entity===entity)return DB.summary[i];
+  }
+  return null;
+}
+function noData(id,msg){
+  $(id).innerHTML='<div class="empty"><b>Nothing here yet</b>'+msg+'</div>';
+}
+
+/* ---------- overview ---------- */
+function renderOverview(){
+  if(!DB.summary.length){
+    noData('ovKpi','Upload your first daily reconciliation to fill this dashboard.');
+    return;
+  }
+  var date=$('ovDate').value||latestDate();
+  var R=sumRow(date,'Resort')||{}, G=sumRow(date,'Green Valley')||{};
+  var grossDay=n(R.Gross_Revenue)+n(G.Gross_Revenue);
+  var netDay=n(R.Net_Revenue)+n(G.Net_Revenue);
+  var custDay=n(R.Customers)+n(G.Customers);
+  var grossMtd=n(R.Gross_MTD)+n(G.Gross_MTD);
+
+  $('ovNote').textContent=R.Variance_Flag?('Checks at upload: '+R.Variance_Flag):'';
+
+  $('ovKpi').innerHTML=[
+    ['Customers, day',f(custDay),f(R.Customers)+' resort and '+f(G.Customers)+' Green Valley','g'],
+    ['Gross revenue, day','PKR '+f(grossDay),'Net PKR '+f(netDay),'n'],
+    ['ARPC, resort','PKR '+f(R.ARPC),'Month to date PKR '+f(R.ARPC_MTD),''],
+    ['Gross revenue, month','PKR '+f(grossMtd),f(n(R.Customers_MTD)+n(G.Customers_MTD))+' customers','n'],
+    ['KPRA, day','PKR '+f(n(R.KPRA)+n(G.KPRA)),'15 percent on food and beverage',''],
+    ['Projected expenses, day','PKR '+f(R.Proj_Expenses),'',''],
+    ['Net profit, day','PKR '+f(R.Net_Profit),'','g'],
+    ['Green Valley ARPC','PKR '+f(G.ARPC),'Month to date PKR '+f(G.ARPC_MTD),'']
+  ].map(function(k){
+    return '<div class="kpi '+k[3]+'"><div class="lbl">'+k[0]+'</div><div class="val">'+k[1]+'</div><div class="sec">'+k[2]+'</div></div>';
+  }).join('');
+
+  var ds=dates().slice(0,30).reverse();
+  killChart('cTrend');
+  CHARTS.cTrend=new Chart($('cTrend'),{
+    data:{labels:ds,datasets:[
+      {type:'bar',label:'Gross revenue',data:ds.map(function(d){var a=sumRow(d,'Resort')||{},b=sumRow(d,'Green Valley')||{};return n(a.Gross_Revenue)+n(b.Gross_Revenue);}),backgroundColor:NAVY,yAxisID:'y',order:2},
+      {type:'line',label:'Customers',data:ds.map(function(d){var a=sumRow(d,'Resort')||{},b=sumRow(d,'Green Valley')||{};return n(a.Customers)+n(b.Customers);}),borderColor:GOLD,backgroundColor:GOLD,borderWidth:2,tension:.3,yAxisID:'y1',order:1}
+    ]},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{y:{position:'left',ticks:{callback:function(v){return (v/1000000).toFixed(1)+'M';}}},
+              y1:{position:'right',grid:{drawOnChartArea:false}}}}
+  });
+
+  var cat={},cust={};
+  DB.activities.filter(function(a){return a.Date===date;}).forEach(function(a){
+    cat[a.Category]=(cat[a.Category]||0)+n(a.Gross_Day);
+    cust[a.Category]=(cust[a.Category]||0)+n(a.Customers);
+  });
+  DB.fb.filter(function(a){return a.Date===date;}).forEach(function(a){
+    cat['F&B']=(cat['F&B']||0)+n(a.Gross_Day);
+  });
+  donut('cCat',Object.keys(cat),Object.values(cat));
+
+  var ck=Object.keys(cust).filter(function(k){return cust[k]>0;});
+  killChart('cCust');
+  CHARTS.cCust=new Chart($('cCust'),{type:'bar',
+    data:{labels:ck,datasets:[{label:'Customers',data:ck.map(function(k){return cust[k];}),backgroundColor:GOLD}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+
+  donut('cSplit',['Resort','Green Valley'],[n(R.Gross_MTD),n(G.Gross_MTD)]);
+}
+
+function donut(id,labels,data){
+  killChart(id);
+  CHARTS[id]=new Chart($(id),{type:'doughnut',
+    data:{labels:labels,datasets:[{data:data,backgroundColor:PALETTE,borderColor:'#fff',borderWidth:2}]},
+    options:{maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}});
+}
+
+/* ---------- activities ---------- */
+function renderActivities(){
+  if(!DB.activities.length){noData('tAct','');return;}
+  var date=$('acDate').value||latestDate(), ent=$('acEnt').value;
+  var rows=DB.activities.filter(function(a){return a.Date===date&&(ent==='All'||a.Entity===ent);});
+  rows.sort(function(a,b){return n(b.Gross_Day)-n(a.Gross_Day);});
+
+  var tG=0,tC=0,tM=0;
+  rows.forEach(function(r){tG+=n(r.Gross_Day);tC+=n(r.Customers);tM+=n(r.Gross_MTD);});
+
+  $('tAct').innerHTML='<thead><tr><th>Line item</th><th>Entity</th><th>Category</th><th class="num">Price</th><th class="num">Customers</th><th class="num">Gross day</th><th class="num">Share</th><th class="num">Gross MTD</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td>'+esc(r.Line_Item)+'</td><td>'+esc(r.Entity)+'</td><td><span class="pill">'+esc(r.Category)+'</span></td>'+
+        '<td class="num">'+f(r.Ticket_Price)+'</td><td class="num">'+f(r.Customers)+'</td><td class="num">'+f(r.Gross_Day)+'</td>'+
+        '<td class="num">'+(tG?((n(r.Gross_Day)/tG)*100).toFixed(1):'0.0')+'%</td><td class="num">'+f(r.Gross_MTD)+'</td></tr>';
+    }).join('')+
+    '<tr class="tot"><td colspan="4">Total</td><td class="num">'+f(tC)+'</td><td class="num">'+f(tG)+'</td><td class="num">100.0%</td><td class="num">'+f(tM)+'</td></tr></tbody>';
+
+  var top=rows.filter(function(r){return n(r.Gross_Day)>0;}).slice(0,10);
+  killChart('cTop');
+  CHARTS.cTop=new Chart($('cTop'),{type:'bar',
+    data:{labels:top.map(function(r){return r.Line_Item;}),datasets:[{label:'Gross revenue',data:top.map(function(r){return n(r.Gross_Day);}),backgroundColor:NAVY}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+
+  var topc=rows.slice().filter(function(r){return n(r.Customers)>0;}).sort(function(a,b){return n(b.Customers)-n(a.Customers);}).slice(0,10);
+  killChart('cTopC');
+  CHARTS.cTopC=new Chart($('cTopC'),{type:'bar',
+    data:{labels:topc.map(function(r){return r.Line_Item;}),datasets:[{label:'Customers',data:topc.map(function(r){return n(r.Customers);}),backgroundColor:GOLD}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+}
+
+/* ---------- food and beverage ---------- */
+function renderFb(){
+  if(!DB.fb.length){noData('tFb','');return;}
+  var date=$('fbDate').value||latestDate();
+  var rows=DB.fb.filter(function(r){return r.Date===date;});
+  var g=0,k=0,net=0,m=0;
+  rows.forEach(function(r){g+=n(r.Gross_Day);k+=n(r.KPRA_Day);net+=n(r.Net_Day);m+=n(r.Gross_MTD);});
+
+  $('tFb').innerHTML='<thead><tr><th>Outlet</th><th>Entity</th><th class="num">Gross day</th><th class="num">KPRA</th><th class="num">Net day</th><th class="num">Gross MTD</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td>'+esc(r.Outlet)+'</td><td>'+esc(r.Entity)+'</td><td class="num">'+f2(r.Gross_Day)+'</td><td class="num">'+f2(r.KPRA_Day)+'</td><td class="num">'+f2(r.Net_Day)+'</td><td class="num">'+f2(r.Gross_MTD)+'</td></tr>';
+    }).join('')+
+    '<tr class="tot"><td colspan="2">Total</td><td class="num">'+f2(g)+'</td><td class="num">'+f2(k)+'</td><td class="num">'+f2(net)+'</td><td class="num">'+f2(m)+'</td></tr></tbody>';
+
+  donut('cFb',rows.map(function(r){return r.Outlet;}),rows.map(function(r){return n(r.Gross_Day);}));
+  donut('cFbM',rows.map(function(r){return r.Outlet;}),rows.map(function(r){return n(r.Gross_MTD);}));
+
+  var d=DB.deductions.filter(function(r){return r.Date===date;});
+  $('tDed').innerHTML='<thead><tr><th>Type</th><th>Entity</th><th class="num">Denomination</th><th class="num">Quantity</th><th class="num">Amount day</th><th class="num">Amount MTD</th></tr></thead><tbody>'+
+    (d.length?d.map(function(r){
+      return '<tr><td>'+esc(r.Type)+'</td><td>'+esc(r.Entity)+'</td><td class="num">'+f(r.Denomination)+'</td><td class="num">'+f(r.Quantity)+'</td><td class="num">'+f(r.Amount_Day)+'</td><td class="num">'+f(r.Amount_MTD)+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" class="muted">No deductions recorded for this date.</td></tr>')+'</tbody>';
+}
+
+/* ---------- green valley ---------- */
+function renderGv(){
+  if(!DB.summary.length){noData('gvKpi','');return;}
+  var date=$('gvDate').value||latestDate();
+  var G=sumRow(date,'Green Valley')||{};
+  $('gvKpi').innerHTML=[
+    ['Customers, day',f(G.Customers),'Month to date '+f(G.Customers_MTD),'g'],
+    ['Gross revenue, day','PKR '+f(G.Gross_Revenue),'Month to date PKR '+f(G.Gross_MTD),'n'],
+    ['ARPC, day','PKR '+f(G.ARPC),'Month to date PKR '+f(G.ARPC_MTD),''],
+    ['Net revenue, day','PKR '+f(G.Net_Revenue),'','n']
+  ].map(function(k){return '<div class="kpi '+k[3]+'"><div class="lbl">'+k[0]+'</div><div class="val">'+k[1]+'</div><div class="sec">'+k[2]+'</div></div>';}).join('');
+
+  var ds=dates().slice(0,30).reverse();
+  killChart('cGvT');
+  CHARTS.cGvT=new Chart($('cGvT'),{type:'bar',
+    data:{labels:ds,datasets:[{label:'Gross revenue',data:ds.map(function(d){var r=sumRow(d,'Green Valley')||{};return n(r.Gross_Revenue);}),backgroundColor:GREEN}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+
+  var rows=DB.activities.filter(function(a){return a.Date===date&&a.Entity==='Green Valley';});
+  donut('cGvM',rows.map(function(r){return r.Line_Item;}),rows.map(function(r){return n(r.Gross_Day);}));
+
+  var tg=0,tc=0;rows.forEach(function(r){tg+=n(r.Gross_Day);tc+=n(r.Customers);});
+  $('tGvLines').innerHTML='<thead><tr><th>Line item</th><th class="num">Price</th><th class="num">Customers</th><th class="num">Gross day</th><th class="num">Gross MTD</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td>'+esc(r.Line_Item)+'</td><td class="num">'+f(r.Ticket_Price)+'</td><td class="num">'+f(r.Customers)+'</td><td class="num">'+f(r.Gross_Day)+'</td><td class="num">'+f(r.Gross_MTD)+'</td></tr>';
+    }).join('')+
+    '<tr class="tot"><td colspan="2">Total</td><td class="num">'+f(tc)+'</td><td class="num">'+f(tg)+'</td><td class="num"></td></tr></tbody>';
+}
+
+/* ---------- history ---------- */
+function renderHistory(){
+  if(!DB.summary.length){noData('tHist','');return;}
+  var ds=dates();
+  $('histNote').textContent=ds.length+' day(s) recorded, '+ds[ds.length-1]+' to '+ds[0];
+  $('tHist').innerHTML='<thead><tr><th>Date</th><th class="num">Customers</th><th class="num">Gross</th><th class="num">KPRA</th><th class="num">Net</th><th class="num">ARPC resort</th><th class="num">Net profit</th><th>Checks</th></tr></thead><tbody>'+
+    ds.map(function(d){
+      var R=sumRow(d,'Resort')||{},G=sumRow(d,'Green Valley')||{};
+      var flag=R.Variance_Flag==='CLEAN'?'<span class="pill" style="background:#E4F2EA;color:#1E7B4D">CLEAN</span>':'<span class="pill" style="background:#FBEAE8;color:#B3261E">'+esc(R.Variance_Flag||'')+'</span>';
+      return '<tr><td><b>'+d+'</b></td><td class="num">'+f(n(R.Customers)+n(G.Customers))+'</td>'+
+        '<td class="num">'+f(n(R.Gross_Revenue)+n(G.Gross_Revenue))+'</td><td class="num">'+f(n(R.KPRA)+n(G.KPRA))+'</td>'+
+        '<td class="num">'+f(n(R.Net_Revenue)+n(G.Net_Revenue))+'</td><td class="num">'+f(R.ARPC)+'</td>'+
+        '<td class="num">'+f(R.Net_Profit)+'</td><td>'+flag+'</td></tr>';
+    }).join('')+'</tbody>';
+}
+
+/* ---------- export ---------- */
+function exportCsv(which){
+  var rows=[],name='';
+  if(which==='activities'){
+    name='mjsr_activity_lines.csv';
+    rows.push(['Date','Entity','Line item','Category','Ticket price','Customers','Gross day','KPRA day','Net day','Gross MTD']);
+    DB.activities.forEach(function(r){rows.push([r.Date,r.Entity,r.Line_Item,r.Category,r.Ticket_Price,r.Customers,r.Gross_Day,r.KPRA_Day,r.Net_Day,r.Gross_MTD]);});
+  }else{
+    name='mjsr_daily_summary.csv';
+    rows.push(['Date','Entity','Customers','Gross','KPRA','Net','ARPC','Gross MTD','Net MTD','Customers MTD','ARPC MTD','Projected expenses','Net profit','Checks']);
+    DB.summary.forEach(function(r){rows.push([r.Date,r.Entity,r.Customers,r.Gross_Revenue,r.KPRA,r.Net_Revenue,r.ARPC,r.Gross_MTD,r.Net_MTD,r.Customers_MTD,r.ARPC_MTD,r.Proj_Expenses,r.Net_Profit,r.Variance_Flag]);});
+  }
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c===null||c===undefined?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=name;a.click();
+}
+
+loadAll();
+</script>
+</body>
+</html>
