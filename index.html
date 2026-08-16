@@ -222,7 +222,7 @@ var MONTHLY_PERIODS={'180':6,'365':12,'all':999};
 
 var DB={summary:[],monthly:[],flags:[],bounds:{first:'',last:'',days:0}};
 var DAY={date:'',activities:[],fb:[],deductions:[]};
-var IMAGES=[], EXTRACTED=null, CHARTS={}, LOADING=false;
+var IMAGES=[], EXTRACTED=null, CHARTS={}, LOADING=false, RETRIED=false;
 
 function $(id){return document.getElementById(id);}
 function n(v){var x=parseFloat(String(v===null||v===undefined?0:v).replace(/[^0-9.\-]/g,''));return isNaN(x)?0:x;}
@@ -371,16 +371,19 @@ function windowFor(k){
     var mo=MONTHLY_PERIODS[k];
     start = mo>900 ? toDate(DB.bounds.first||last) : new Date(end.getFullYear(),end.getMonth()-mo+1,1);
   } else { start=new Date(end.getTime()-(parseInt(k,10)-1)*86400000); }
-  var lo=toDate(DB.bounds.first||last);
-  if(start<lo)start=lo;
+  if(DB.bounds.first){
+    var lo=toDate(DB.bounds.first);
+    if(start<lo)start=lo;
+  }
   return {from:iso(start),to:last};
 }
 
 /* ---------- load ---------- */
 function boot(force){
+  RETRIED=false;
   var k=$('ovPeriod').value||'30';
-  var w=windowFor(k);
-  fetchWindow(isMonthly(k)?{from:w.to,to:w.to}:w, true);
+  var w=windowFor(isMonthly(k)?'30':k);
+  fetchWindow(w, true);
 }
 
 function fetchWindow(w, withMonthly){
@@ -401,6 +404,16 @@ function fetchWindow(w, withMonthly){
       : 'No records yet';
     fillPeriodSelects();
     fillDateSelects();
+
+    // The first call runs before the date bounds are known, so if the window
+    // it guessed came back empty, recompute against the real bounds and retry.
+    if(!DB.summary.length && DB.bounds.days && !RETRIED){
+      RETRIED=true;
+      var k2=$('ovPeriod').value||'30';
+      var w2=windowFor(isMonthly(k2)?'30':k2);
+      fetchWindow(w2,true);
+      return;
+    }
     renderOverview();renderHistory();
   }).catch(function(){LOADING=false;$('lastSync').textContent='Offline';});
 }
