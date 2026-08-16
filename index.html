@@ -306,8 +306,10 @@ function extract(){
 }
 
 function flagHtml(list){
-  if(!list.length)return '<div class="clean">Every reconciliation check passed.</div>';
-  return list.map(function(c){return '<div class="flag '+esc(c.severity)+'"><b>'+esc(c.severity)+'</b> '+esc(c.message)+'</div>';}).join('');
+  // INFO rows are internal bookkeeping, such as the running month to date gap
+  var show=(list||[]).filter(function(c){return c.severity!=='INFO';});
+  if(!show.length)return '<div class="clean">Every reconciliation check passed.</div>';
+  return show.map(function(c){return '<div class="flag '+esc(c.severity)+'"><b>'+esc(c.severity)+'</b> '+esc(c.message)+'</div>';}).join('');
 }
 
 function paintReview(d,checks){
@@ -665,7 +667,8 @@ function renderHistory(){
     var body='',T={c:0,g:0,k:0,n:0,p:0};
     ds.forEach(function(d,i){
       var R=sumRow(d,'Resort')||{},G=sumRow(d,'Green Valley')||{};
-      var fl=flagsFor(d), high=fl.filter(function(x){return x.severity==='HIGH';}).length;
+      var fl=flagsFor(d).filter(function(x){return x.severity!=='INFO';});
+      var high=fl.filter(function(x){return x.severity==='HIGH';}).length;
       var pill=fl.length?'<span class="pill" style="background:'+(high?'#FBEAE8':'#FFF6E2')+';color:'+(high?'#B3261E':'#8A6D1F')+'">'+fl.length+' check'+(fl.length===1?'':'s')+' &#9662;</span>'
         :'<span class="pill" style="background:#E4F2EA;color:#1E7B4D">CLEAN</span>';
       T.c+=n(R.Customers)+n(G.Customers);T.g+=n(R.Gross_Revenue)+n(G.Gross_Revenue);
