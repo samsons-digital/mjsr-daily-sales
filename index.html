@@ -168,16 +168,28 @@ input.num{text-align:right}
 <!-- OVERVIEW -->
 <section class="panel" id="p-overview">
   <div class="card"><div class="body row">
-    <label style="font-weight:bold">Showing</label>
+    <label style="font-weight:bold">Day</label>
     <select id="ovDate" onchange="renderOverview()"></select>
+    <label style="font-weight:bold">Period</label>
+    <select id="ovPeriod" onchange="renderOverview()">
+      <option value="7">Last 7 days</option>
+      <option value="weekend">Last weekend</option>
+      <option value="14">Last 2 weeks</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 3 months</option>
+      <option value="mtd">Month to date</option>
+      <option value="all">Everything</option>
+    </select>
     <span class="muted" id="ovNote"></span>
   </div></div>
+  <div class="card"><h2>Checks on the selected day</h2><div class="body" id="ovFlags"></div></div>
   <div class="grid g4" id="ovKpi" style="margin-bottom:18px"></div>
+  <div class="card"><h2>Period totals</h2><div class="body"><div class="grid g4" id="ovPeriodKpi"></div></div></div>
   <div class="grid g2">
-    <div class="card"><h2>Revenue and footfall, last 30 records</h2><div class="body"><div class="chartbox"><canvas id="cTrend"></canvas></div></div></div>
+    <div class="card"><h2>Revenue and footfall across the period</h2><div class="body"><div class="chartbox"><canvas id="cTrend"></canvas></div></div></div>
     <div class="card"><h2>Revenue by category, selected day</h2><div class="body"><div class="chartbox"><canvas id="cCat"></canvas></div></div></div>
     <div class="card"><h2>Customers by category, selected day</h2><div class="body"><div class="chartbox"><canvas id="cCust"></canvas></div></div></div>
-    <div class="card"><h2>Resort against Green Valley, month to date</h2><div class="body"><div class="chartbox"><canvas id="cSplit"></canvas></div></div></div>
+    <div class="card"><h2>Resort against Green Valley, selected period</h2><div class="body"><div class="chartbox"><canvas id="cSplit"></canvas></div></div></div>
   </div>
 </section>
 
@@ -230,6 +242,16 @@ input.num{text-align:right}
 <!-- HISTORY -->
 <section class="panel" id="p-history">
   <div class="card"><div class="body row">
+    <label style="font-weight:bold">Period</label>
+    <select id="hsPeriod" onchange="renderHistory()">
+      <option value="7">Last 7 days</option>
+      <option value="weekend">Last weekend</option>
+      <option value="14">Last 2 weeks</option>
+      <option value="30">Last 30 days</option>
+      <option value="90">Last 3 months</option>
+      <option value="mtd">Month to date</option>
+      <option value="all" selected>Everything</option>
+    </select>
     <button class="act ghost" onclick="exportCsv('history')">Export CSV</button>
     <span class="muted" id="histNote"></span>
   </div></div>
@@ -244,7 +266,7 @@ var PIN='1234';
 var NAVY='#1B2C4D', GOLD='#B8922E', GREEN='#1E7B4D', RED='#B3261E';
 var PALETTE=['#1B2C4D','#B8922E','#1E7B4D','#4A6491','#8A6D1F','#3F8F6B','#7286A8','#C4A94F','#5C6B82','#9BAAC4','#D6BE79','#2F5A78'];
 
-var DB={summary:[],activities:[],fb:[],deductions:[],config:[]};
+var DB={summary:[],activities:[],fb:[],deductions:[],config:[],flags:[]};
 var IMAGES=[];
 var EXTRACTED=null;
 var CHARTS={};
@@ -272,6 +294,7 @@ Array.prototype.forEach.call(document.querySelectorAll('nav button'),function(b)
     if(b.dataset.p==='activities')renderActivities();
     if(b.dataset.p==='fb')renderFb();
     if(b.dataset.p==='gv')renderGv();
+    if(b.dataset.p==='history')renderHistory();
   };
 });
 
@@ -417,8 +440,9 @@ function loadAll(quiet){
   post({action:'DASHBOARD'}).then(function(r){
     if(!r.ok){$('lastSync').textContent='Sync failed';return;}
     DB.summary=r.summary||[];DB.activities=r.activities||[];DB.fb=r.fb||[];
-    DB.deductions=r.deductions||[];DB.config=r.config||[];
-    $('lastSync').textContent=DB.summary.length?('Records to '+latestDate()):'No records yet';
+    DB.deductions=r.deductions||[];DB.config=r.config||[];DB.flags=r.flags||[];
+    var dd=dates();
+    $('lastSync').textContent=dd.length?(dd.length+' day'+(dd.length===1?'':'s')+' to '+dd[0]):'No records yet';
     fillDates();
     renderOverview();renderHistory();
   }).catch(function(){$('lastSync').textContent='Offline';});
@@ -447,6 +471,64 @@ function noData(id,msg){
   $(id).innerHTML='<div class="empty"><b>Nothing here yet</b>'+msg+'</div>';
 }
 
+
+/* ---------- period filtering ---------- */
+function toDate(s){var p=String(s).split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function periodLabel(k){
+  return {'7':'last 7 days','weekend':'last weekend','14':'last 2 weeks','30':'last 30 days',
+          '90':'last 3 months','mtd':'month to date','all':'all records'}[k]||k;
+}
+function periodDates(key){
+  var all=dates();
+  if(!all.length)return [];
+  if(key==='all')return all;
+  var latest=toDate(all[0]);
+  if(key==='mtd'){
+    var y=latest.getFullYear(),m=latest.getMonth();
+    return all.filter(function(d){var x=toDate(d);return x.getFullYear()===y&&x.getMonth()===m;});
+  }
+  if(key==='weekend'){
+    var sat=null;
+    for(var i=0;i<all.length;i++){if(toDate(all[i]).getDay()===6){sat=all[i];break;}}
+    if(!sat){
+      for(var j=0;j<all.length;j++){var g=toDate(all[j]).getDay();if(g===0){sat=all[j];break;}}
+      if(!sat)return [];
+      return all.filter(function(d){return d===sat;});
+    }
+    var sun=new Date(toDate(sat).getTime()+86400000);
+    var sunKey=sun.getFullYear()+'-'+('0'+(sun.getMonth()+1)).slice(-2)+'-'+('0'+sun.getDate()).slice(-2);
+    return all.filter(function(d){return d===sat||d===sunKey;});
+  }
+  var days=parseInt(key,10)||30;
+  var cut=new Date(latest.getTime()-(days-1)*86400000);
+  return all.filter(function(d){return toDate(d)>=cut;});
+}
+function periodTotals(ds){
+  var t={days:ds.length,cust:0,gross:0,net:0,kpra:0,profit:0,best:'',bestVal:0};
+  ds.forEach(function(d){
+    var R=sumRow(d,'Resort')||{},G=sumRow(d,'Green Valley')||{};
+    var gr=n(R.Gross_Revenue)+n(G.Gross_Revenue);
+    t.cust+=n(R.Customers)+n(G.Customers);
+    t.gross+=gr;
+    t.net+=n(R.Net_Revenue)+n(G.Net_Revenue);
+    t.kpra+=n(R.KPRA)+n(G.KPRA);
+    t.profit+=n(R.Net_Profit);
+    if(gr>t.bestVal){t.bestVal=gr;t.best=d;}
+  });
+  return t;
+}
+
+/* ---------- flags ---------- */
+function flagsFor(date){
+  return DB.flags.filter(function(f){return f.date===date;});
+}
+function flagHtml(list){
+  if(!list.length)return '<div class="clean">Every reconciliation check passed on this day.</div>';
+  return list.map(function(c){
+    return '<div class="flag '+esc(c.severity)+'"><b>'+esc(c.severity)+'</b>'+esc(c.message)+'</div>';
+  }).join('');
+}
+
 /* ---------- overview ---------- */
 function renderOverview(){
   if(!DB.summary.length){
@@ -460,7 +542,9 @@ function renderOverview(){
   var custDay=n(R.Customers)+n(G.Customers);
   var grossMtd=n(R.Gross_MTD)+n(G.Gross_MTD);
 
-  $('ovNote').textContent=R.Variance_Flag?('Checks at upload: '+R.Variance_Flag):'';
+  var fl=flagsFor(date);
+  $('ovFlags').innerHTML=flagHtml(fl);
+  $('ovNote').textContent=fl.length?(fl.length+' check(s) raised on '+date):'';
 
   $('ovKpi').innerHTML=[
     ['Customers, day',f(custDay),f(R.Customers)+' resort and '+f(G.Customers)+' Green Valley','g'],
@@ -475,7 +559,21 @@ function renderOverview(){
     return '<div class="kpi '+k[3]+'"><div class="lbl">'+k[0]+'</div><div class="val">'+k[1]+'</div><div class="sec">'+k[2]+'</div></div>';
   }).join('');
 
-  var ds=dates().slice(0,30).reverse();
+  var pk=$('ovPeriod').value;
+  var pds=periodDates(pk);
+  var P=periodTotals(pds);
+  $('ovPeriodKpi').innerHTML=[
+    ['Days in period',f(P.days),periodLabel(pk),'n'],
+    ['Customers',f(P.cust),P.days?('average '+f(Math.round(P.cust/P.days))+' a day'):'','g'],
+    ['Gross revenue','PKR '+f(P.gross),P.days?('average PKR '+f(Math.round(P.gross/P.days))+' a day'):'','n'],
+    ['Net revenue','PKR '+f(P.net),'KPRA PKR '+f(P.kpra),''],
+    ['ARPC across period','PKR '+(P.cust?f(Math.round(P.net/P.cust)):'0'),'net over customers',''],
+    ['Net profit','PKR '+f(P.profit),'resort projected expenses applied','g'],
+    ['Strongest day',P.best||'-','PKR '+f(P.bestVal),''],
+    ['Weakest day',weakest(pds),'','']
+  ].map(function(k){return '<div class="kpi '+k[3]+'"><div class="lbl">'+k[0]+'</div><div class="val">'+k[1]+'</div><div class="sec">'+k[2]+'</div></div>';}).join('');
+
+  var ds=pds.slice().reverse();
   killChart('cTrend');
   CHARTS.cTrend=new Chart($('cTrend'),{
     data:{labels:ds,datasets:[
@@ -503,7 +601,22 @@ function renderOverview(){
     data:{labels:ck,datasets:[{label:'Customers',data:ck.map(function(k){return cust[k];}),backgroundColor:GOLD}]},
     options:{maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
 
-  donut('cSplit',['Resort','Green Valley'],[n(R.Gross_MTD),n(G.Gross_MTD)]);
+  var rp=0,gp=0;
+  pds.forEach(function(d){
+    var a=sumRow(d,'Resort')||{},b=sumRow(d,'Green Valley')||{};
+    rp+=n(a.Gross_Revenue);gp+=n(b.Gross_Revenue);
+  });
+  donut('cSplit',['Resort','Green Valley'],[rp,gp]);
+}
+
+function weakest(ds){
+  var lo=null,key='-';
+  ds.forEach(function(d){
+    var R=sumRow(d,'Resort')||{},G=sumRow(d,'Green Valley')||{};
+    var v=n(R.Gross_Revenue)+n(G.Gross_Revenue);
+    if(lo===null||v<lo){lo=v;key=d;}
+  });
+  return key;
 }
 
 function donut(id,labels,data){
@@ -600,17 +713,42 @@ function renderGv(){
 /* ---------- history ---------- */
 function renderHistory(){
   if(!DB.summary.length){noData('tHist','');return;}
-  var ds=dates();
-  $('histNote').textContent=ds.length+' day(s) recorded, '+ds[ds.length-1]+' to '+ds[0];
+  var pk=$('hsPeriod')?$('hsPeriod').value:'all';
+  var ds=periodDates(pk);
+  if(!ds.length){noData('tHist','No days fall inside the '+periodLabel(pk)+'.');$('histNote').textContent='';return;}
+  var P=periodTotals(ds);
+  $('histNote').textContent=ds.length+' day(s) shown, '+ds[ds.length-1]+' to '+ds[0]+
+    ', PKR '+f(P.gross)+' gross and '+f(P.cust)+' customers';
+
+  var body='';
+  ds.forEach(function(d,i){
+    var R=sumRow(d,'Resort')||{},G=sumRow(d,'Green Valley')||{};
+    var fl=flagsFor(d);
+    var high=fl.filter(function(c){return c.severity==='HIGH';}).length;
+    var pill=fl.length
+      ? '<span class="pill" style="background:'+(high?'#FBEAE8':'#FFF6E2')+';color:'+(high?'#B3261E':'#8A6D1F')+'">'+fl.length+' check'+(fl.length===1?'':'s')+' &#9662;</span>'
+      : '<span class="pill" style="background:#E4F2EA;color:#1E7B4D">CLEAN</span>';
+    body+='<tr style="cursor:pointer" onclick="toggleFlags('+i+')"><td><b>'+d+'</b></td>'+
+      '<td class="num">'+f(n(R.Customers)+n(G.Customers))+'</td>'+
+      '<td class="num">'+f(n(R.Gross_Revenue)+n(G.Gross_Revenue))+'</td>'+
+      '<td class="num">'+f(n(R.KPRA)+n(G.KPRA))+'</td>'+
+      '<td class="num">'+f(n(R.Net_Revenue)+n(G.Net_Revenue))+'</td>'+
+      '<td class="num">'+f(R.ARPC)+'</td>'+
+      '<td class="num">'+f(R.Net_Profit)+'</td><td>'+pill+'</td></tr>'+
+      '<tr id="fr'+i+'" style="display:none"><td colspan="8" style="background:#FBFCFE;padding:14px 16px">'+
+      flagHtml(fl)+'</td></tr>';
+  });
+
   $('tHist').innerHTML='<thead><tr><th>Date</th><th class="num">Customers</th><th class="num">Gross</th><th class="num">KPRA</th><th class="num">Net</th><th class="num">ARPC resort</th><th class="num">Net profit</th><th>Checks</th></tr></thead><tbody>'+
-    ds.map(function(d){
-      var R=sumRow(d,'Resort')||{},G=sumRow(d,'Green Valley')||{};
-      var flag=R.Variance_Flag==='CLEAN'?'<span class="pill" style="background:#E4F2EA;color:#1E7B4D">CLEAN</span>':'<span class="pill" style="background:#FBEAE8;color:#B3261E">'+esc(R.Variance_Flag||'')+'</span>';
-      return '<tr><td><b>'+d+'</b></td><td class="num">'+f(n(R.Customers)+n(G.Customers))+'</td>'+
-        '<td class="num">'+f(n(R.Gross_Revenue)+n(G.Gross_Revenue))+'</td><td class="num">'+f(n(R.KPRA)+n(G.KPRA))+'</td>'+
-        '<td class="num">'+f(n(R.Net_Revenue)+n(G.Net_Revenue))+'</td><td class="num">'+f(R.ARPC)+'</td>'+
-        '<td class="num">'+f(R.Net_Profit)+'</td><td>'+flag+'</td></tr>';
-    }).join('')+'</tbody>';
+    body+
+    '<tr class="tot"><td>Total, '+periodLabel(pk)+'</td><td class="num">'+f(P.cust)+'</td><td class="num">'+f(P.gross)+
+    '</td><td class="num">'+f(P.kpra)+'</td><td class="num">'+f(P.net)+'</td><td class="num">'+
+    (P.cust?f(Math.round(P.net/P.cust)):'0')+'</td><td class="num">'+f(P.profit)+'</td><td></td></tr></tbody>';
+}
+
+function toggleFlags(i){
+  var el=$('fr'+i);
+  if(el)el.style.display = el.style.display==='none' ? '' : 'none';
 }
 
 /* ---------- export ---------- */
@@ -623,7 +761,8 @@ function exportCsv(which){
   }else{
     name='mjsr_daily_summary.csv';
     rows.push(['Date','Entity','Customers','Gross','KPRA','Net','ARPC','Gross MTD','Net MTD','Customers MTD','ARPC MTD','Projected expenses','Net profit','Checks']);
-    DB.summary.forEach(function(r){rows.push([r.Date,r.Entity,r.Customers,r.Gross_Revenue,r.KPRA,r.Net_Revenue,r.ARPC,r.Gross_MTD,r.Net_MTD,r.Customers_MTD,r.ARPC_MTD,r.Proj_Expenses,r.Net_Profit,r.Variance_Flag]);});
+    var keep=$('hsPeriod')?periodDates($('hsPeriod').value):dates();
+    DB.summary.filter(function(r){return keep.indexOf(r.Date)>=0;}).forEach(function(r){rows.push([r.Date,r.Entity,r.Customers,r.Gross_Revenue,r.KPRA,r.Net_Revenue,r.ARPC,r.Gross_MTD,r.Net_MTD,r.Customers_MTD,r.ARPC_MTD,r.Proj_Expenses,r.Net_Profit,r.Variance_Flag]);});
   }
   var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c===null||c===undefined?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');
