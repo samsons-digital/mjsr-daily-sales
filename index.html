@@ -489,7 +489,8 @@ function renderOverview(){
     rTot=DB.monthly.filter(function(x){return months.indexOf(x.month)>=0&&x.entity==='Resort';}).reduce(function(a,b){return a+n(b.gross);},0);
     gTot=DB.monthly.filter(function(x){return months.indexOf(x.month)>=0&&x.entity!=='Resort';}).reduce(function(a,b){return a+n(b.gross);},0);
     var sel=DB.monthly.filter(function(x){return months.indexOf(x.month)>=0;});
-    P={days:sel.reduce(function(a,b){return a+n(b.days);},0)/2,
+    P={days:months.length,
+       tradingDays:Math.round(sel.reduce(function(a,b){return a+n(b.days);},0)/2),
        cust:sel.reduce(function(a,b){return a+n(b.customers);},0),
        gross:rTot+gTot,
        net:sel.reduce(function(a,b){return a+n(b.net);},0),
@@ -521,7 +522,8 @@ function renderOverview(){
   }
 
   $('ovPeriodKpi').innerHTML=[
-    [(P.unit==='month'?'Months':'Days')+' in period',f(P.days),labelOf(k),'n'],
+    [(P.unit==='month'?'Months':'Days')+' in period',f(P.days),
+      labelOf(k)+(P.tradingDays?(', '+f(P.tradingDays)+' trading days'):''),'n'],
     ['Customers',f(P.cust),P.days?('average '+f(Math.round(P.cust/P.days))+' a '+P.unit):'','g'],
     ['Gross revenue','PKR '+f(P.gross),P.days?('average PKR '+f(Math.round(P.gross/P.days)))+' a '+P.unit:'','n'],
     ['Net revenue','PKR '+f(P.net),'KPRA PKR '+f(P.kpra),''],
