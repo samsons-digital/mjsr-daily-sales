@@ -12,20 +12,20 @@ body{font-family:Arial,Helvetica,sans-serif;background:var(--wash);color:var(--i
 header{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 header h1{font-size:19px;letter-spacing:.3px}
 header .sub{font-size:12px;color:#B9C4D6;margin-top:3px}
-.badge{background:var(--gold);color:#1B2C4D;font-weight:bold;font-size:11px;padding:5px 11px;border-radius:2px}
+.badge{background:var(--gold);color:#1B2C4D;font-weight:bold;font-size:11px;padding:5px 11px;border-radius:10px}
 nav{background:#132239;display:flex;overflow-x:auto}
 nav button{background:none;border:none;color:#9FB0C8;font-family:inherit;font-size:13px;font-weight:bold;padding:13px 20px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
 nav button:hover{color:#fff}
 nav button.on{color:#fff;border-bottom-color:var(--gold)}
 main{padding:22px;max-width:1400px;margin:0 auto}
 .panel{display:none}.panel.on{display:block}
-.card{background:#fff;border:1px solid var(--line);border-radius:3px;margin-bottom:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:18px}
 .card h2{font-size:14px;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--navy);color:#fff}
 .card .body{padding:16px}
 .grid{display:grid;gap:14px}
 .g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 .g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-.kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:3px;padding:14px 16px}
+.kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px}
 .kpi .lbl{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.7px;font-weight:bold}
 .kpi .val{font-size:24px;font-weight:bold;color:var(--navy);margin-top:5px}
 .kpi .sec{font-size:12px;color:var(--mute);margin-top:3px}
@@ -37,39 +37,72 @@ tbody tr:nth-child(even){background:#FAFBFD}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .tot td{font-weight:bold;background:#E9EEF6 !important;border-top:2px solid var(--navy)}
 .scroll{max-height:520px;overflow:auto}
-button.act{background:var(--navy);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:bold;padding:11px 22px;border-radius:2px;cursor:pointer}
+button.act{background:var(--navy);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:bold;padding:11px 22px;border-radius:10px;cursor:pointer}
 button.act:hover{background:#25395F}
 button.act:disabled{background:#9AA6B8;cursor:not-allowed}
 button.gold{background:var(--gold);color:#1B2C4D}
 button.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy)}
-input,select{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:2px;background:#fff}
+input,select{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
 input.num{text-align:right}
-#drop{border:2px dashed #A9B7CC;border-radius:4px;padding:38px 20px;text-align:center;background:#FBFCFE;cursor:pointer}
+#drop{border:2px dashed #A9B7CC;border-radius:10px;padding:38px 20px;text-align:center;background:#FBFCFE;cursor:pointer}
 #drop.hot{border-color:var(--gold);background:#FFFCF2}
 #drop .big{font-size:15px;font-weight:bold;color:var(--navy)}
 #drop .small{font-size:12px;color:var(--mute);margin-top:6px}
 .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.thumb{position:relative;width:104px;height:104px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.thumb{position:relative;width:104px;height:104px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .thumb span{position:absolute;top:3px;right:3px;background:var(--red);color:#fff;width:20px;height:20px;border-radius:50%;font-size:13px;line-height:20px;text-align:center;cursor:pointer;font-weight:bold}
-.flag{border-left:4px solid;padding:10px 14px;margin-bottom:8px;font-size:13px;border-radius:2px}
+.flag{border-left:4px solid;padding:10px 14px;margin-bottom:8px;font-size:13px;border-radius:10px}
 .flag.HIGH{border-color:var(--red);background:#FDF1F0}
 .flag.MEDIUM{border-color:var(--gold);background:#FFFBF0}
 .flag.LOW,.flag.NOTICE{border-color:#5C6B82;background:#F4F6F9}
-.clean{border-left:4px solid var(--green);background:#F1F9F4;padding:10px 14px;font-size:13px;border-radius:2px}
+.clean{border-left:4px solid var(--green);background:#F1F9F4;padding:10px 14px;font-size:13px;border-radius:10px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:8px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .chartbox{position:relative;height:290px}
 .muted{color:var(--mute);font-size:12px}
-.pill{display:inline-block;font-size:11px;font-weight:bold;padding:3px 9px;border-radius:2px;background:#E9EEF6;color:var(--navy)}
+.pill{display:inline-block;font-size:11px;font-weight:bold;padding:3px 9px;border-radius:10px;background:#E9EEF6;color:var(--navy)}
 .empty{padding:40px 20px;text-align:center;color:var(--mute)}
 .empty b{display:block;color:var(--navy);font-size:15px;margin-bottom:6px}
 .load{padding:26px;text-align:center;color:var(--mute);font-size:13px}
+.card{border-radius:12px;overflow:hidden}
+.kpi{border-radius:12px}
+.flag,.clean{border-radius:8px}
+.foot{text-align:center;padding:18px;font-size:12px;color:var(--mute);border-top:1px solid var(--line);background:#fff}
+.foot b{color:var(--navy)}
+body.locked header,body.locked nav,body.locked main,body.locked .foot{display:none}
+#gate{position:fixed;inset:0;background:var(--navy);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.g-box{background:#fff;border-radius:18px;padding:30px 28px 22px;width:100%;max-width:340px;text-align:center;border-top:5px solid var(--gold);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.g-org{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:bold}
+.g-title{font-size:21px;font-weight:bold;color:var(--navy);margin-top:8px}
+.g-sub{font-size:12px;color:var(--mute);margin-top:4px}
+.g-dots{display:flex;justify-content:center;gap:14px;margin:22px 0 18px}
+.g-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--navy)}
+.g-dot.on{background:var(--navy)}
+.g-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g-key{height:56px;border-radius:12px;border:1px solid var(--line);background:#F9FAFB;font-family:inherit;font-size:20px;font-weight:bold;color:var(--navy);cursor:pointer}
+.g-key:active{background:#FFF8E6}
+.g-key.sm{font-size:13px;color:var(--mute)}
+.g-msg{min-height:20px;margin-top:14px;font-size:12px;font-weight:bold;color:var(--red)}
+.g-msg.busy{color:var(--mute)}
+.g-ver{margin-top:10px;font-size:10px;color:var(--mute);letter-spacing:.06em}
 @media(max-width:640px){main{padding:14px}.card .body{padding:12px}header h1{font-size:16px}}
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div id="gate">
+  <div class="g-box">
+    <div class="g-org">Samsons Group of Companies</div>
+    <div class="g-title">Daily Sales Reconciliation</div>
+    <div class="g-sub">Malam Jabba Ski Resort, restricted access</div>
+    <div class="g-dots" id="gDots"></div>
+    <div class="g-pad" id="gPad"></div>
+    <div class="g-msg" id="gMsg"></div>
+    <div class="g-ver">MJSR-DAILY-SALES v2.0</div>
+  </div>
+</div>
 
 <header>
   <div>
@@ -79,6 +112,7 @@ input.num{text-align:right}
   <div class="row">
     <span class="badge" id="lastSync">Loading</span>
     <button class="act ghost" onclick="boot(true)">Refresh</button>
+    <button class="act gold" onclick="lockPortal('')">Lock</button>
   </div>
 </header>
 
@@ -205,10 +239,11 @@ input.num{text-align:right}
 </section>
 
 </main>
+<footer class="foot"><b>MJSR Daily Sales Reconciliation v2.0</b> &nbsp;&middot;&nbsp; Samsons Group of Companies</footer>
 
 <script>
 var API='https://script.google.com/macros/s/AKfycbwyXOISC870jhSuP7xBlIu6iUiw9KleAcFYabXLPgbtgY-omSyWkt2TxbEG-zYELxeCUw/exec';
-var PIN='1234';
+var TOKEN_KEY='mjsr_ds_token', TOKEN=null;
 var NAVY='#1B2C4D', GOLD='#B8922E', GREEN='#1E7B4D';
 var PALETTE=['#1B2C4D','#B8922E','#1E7B4D','#4A6491','#8A6D1F','#3F8F6B','#7286A8','#C4A94F','#5C6B82','#9BAAC4','#D6BE79','#2F5A78'];
 
@@ -229,9 +264,23 @@ function n(v){var x=parseFloat(String(v===null||v===undefined?0:v).replace(/[^0-
 function f(v){return n(v).toLocaleString('en-US',{maximumFractionDigits:0});}
 function f2(v){return n(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(s){return String(s===null||s===undefined?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function post(body){
+function store(k,v){try{if(v===null)sessionStorage.removeItem(k);else sessionStorage.setItem(k,v);}catch(e){}}
+function recall(k){try{return sessionStorage.getItem(k);}catch(e){return null;}}
+function rawPost(body,tries){
+  tries=tries||0;
   return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
-    .then(function(r){return r.json();});
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .catch(function(e){
+      if(tries>=2)throw e;
+      return new Promise(function(res){setTimeout(res,tries?3000:1500);}).then(function(){return rawPost(body,tries+1);});
+    });
+}
+function post(body){
+  body.token=TOKEN;
+  return rawPost(body).then(function(r){
+    if(r&&(r.auth||r.limited)){lockPortal('Your session has ended. Enter the PIN again.');throw new Error('Session ended');}
+    return r;
+  });
 }
 function killChart(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
 function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
@@ -346,12 +395,12 @@ function harvestEdits(){
 }
 
 function commit(){
-  if($('pin').value!==PIN){alert('That PIN is not right.');return;}
+  if(!$('pin').value){alert('Enter the manager PIN to save.');return;}
   if(!EXTRACTED)return;
   var d=harvestEdits();
   if(!d.report_date){alert('Set the report date before saving.');return;}
   var b=$('btnCommit');b.disabled=true;b.innerHTML='<span class="spin"></span>Saving';
-  post({action:'COMMIT',data:d,user:'GM Portal',image_name:IMAGES.map(function(i){return i.name;}).join(', ')})
+  post({action:'COMMIT',pin:$('pin').value,data:d,user:'GM Portal',image_name:IMAGES.map(function(i){return i.name;}).join(', ')})
   .then(function(r){
     b.disabled=false;b.textContent='Save to database';
     if(!r.ok){alert('Not saved. '+(r.error||''));return;}
@@ -720,8 +769,54 @@ function exportCsv(which){
   a.download=name;a.click();
 }
 
-fillPeriodSelects();
-boot();
+/* ---------- access gate ---------- */
+var GATE_PIN='',GATE_BUSY=false;
+function buildGate(){
+  var dots='';for(var i=0;i<4;i++)dots+='<div class="g-dot" id="gd'+i+'"></div>';
+  $('gDots').innerHTML=dots;
+  var keys=['1','2','3','4','5','6','7','8','9','CLR','0','DEL'];
+  $('gPad').innerHTML=keys.map(function(k){return '<button class="g-key'+(k.length>1?' sm':'')+'" data-k="'+k+'">'+(k==='DEL'?'&#9003;':k)+'</button>';}).join('');
+  $('gPad').onclick=function(e){var b=e.target.closest('.g-key');if(b)gateKey(b.dataset.k);};
+  document.addEventListener('keydown',function(e){
+    if($('gate').style.display==='none')return;
+    if(/^[0-9]$/.test(e.key))gateKey(e.key);else if(e.key==='Backspace')gateKey('DEL');
+  });
+}
+function gateDots(){for(var i=0;i<4;i++)$('gd'+i).className='g-dot'+(i<GATE_PIN.length?' on':'');}
+function gateMsg(t,busy){$('gMsg').textContent=t||'';$('gMsg').className='g-msg'+(busy?' busy':'');}
+function gateKey(k){
+  if(GATE_BUSY)return;
+  if(k==='CLR')GATE_PIN='';else if(k==='DEL')GATE_PIN=GATE_PIN.slice(0,-1);else if(GATE_PIN.length<4)GATE_PIN+=k;
+  gateDots();gateMsg('');
+  if(GATE_PIN.length===4)gateUnlock();
+}
+function gateUnlock(){
+  GATE_BUSY=true;gateMsg('Checking PIN...',true);
+  rawPost({action:'UNLOCK',pin:GATE_PIN}).then(function(r){
+    GATE_BUSY=false;GATE_PIN='';gateDots();
+    if(!r.ok){gateMsg(r.error||'Incorrect PIN. Please try again.');return;}
+    TOKEN=r.token;store(TOKEN_KEY,TOKEN);openPortal();
+  }).catch(function(){GATE_BUSY=false;GATE_PIN='';gateDots();gateMsg('Could not reach the server. Check the connection and try again.');});
+}
+function openPortal(){
+  $('gate').style.display='none';
+  document.body.classList.remove('locked');
+  gateMsg('');
+  fillPeriodSelects();
+  boot();
+}
+function lockPortal(msg){
+  TOKEN=null;store(TOKEN_KEY,null);
+  DB={summary:[],monthly:[],flags:[],bounds:{first:'',last:'',days:0}};
+  DAY={date:'',activities:[],fb:[],deductions:[]};
+  document.body.classList.add('locked');
+  $('gate').style.display='flex';
+  GATE_PIN='';gateDots();gateMsg(msg||'');
+}
+
+buildGate();
+TOKEN=recall(TOKEN_KEY);
+if(TOKEN){openPortal();}else{lockPortal('');}
 </script>
 </body>
 </html>
